@@ -23,10 +23,9 @@ if __name__ == "__main__":
     if args.track:
         import wandb
 
-        wandb.init(
+        run = wandb.init(
             project=args.wandb_project_name,
             entity=args.wandb_entity,
-            sync_tensorboard=True,
             config=vars(args),
             name=run_name,
             monitor_gym=True,
@@ -112,7 +111,13 @@ if __name__ == "__main__":
                             writer.add_scalar("charts/episodic_return_per_episode", item["episode"]["r"], episode_number)
                             writer.add_scalar("charts/episodic_length", item["episode"]["l"], global_step)
                             writer.add_scalar("charts/episodic_length_per_episode", item["episode"]["l"], episode_number)
-                            # print(f"episodic_return={item['episode']['r']}")
+
+                            if args.track:
+                                run.log({"episodic_return": item["episode"]["r"],
+                                        "episode_length": item["episode"]["l"],
+                                        "episode_number": episode_number})
+
+                            
                             episode_number += 1
                             break
 

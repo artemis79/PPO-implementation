@@ -1,34 +1,38 @@
 import pandas as pd
 import wandb
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 api = wandb.Api()
 entity, project = "university-alberta", "ppo-implementation"
 runs = api.runs(entity + "/" + project)
 
-summary_list, config_list, name_list = [], [], []
-index = 5
+
 episodic_return = []
+episode_number = []
+min_episode_number = float('inf')
+
 for run in runs:
     # .summary contains output keys/values for
     # metrics such as accuracy.
     #  We call ._json_dict to omit large files
-    print(run.history())
-    index += 1
-    if index > 6:
-        break
-    summary_list.append(run.summary._json_dict)
+    df = run.history(samples=5000, x_axis="episode_number", keys=["episodic_return_per_episode"])
+    if "episodic_return_per_episode" in df and "episode_number" in df:
+        # print(df)
+        episodic_return.append(np.array(df["episodic_return_per_episode"]))
+        episode_number = df["episode_number"].tolist()
+        min_episode_number = min(min_episode_number, episode_number[-1])
 
-    # .config contains the hyperparameters.
-    #  We remove special values that start with _.
-    config_list.append({k: v for k, v in run.config.items() if not k.startswith("_")})
+returns = []
+for ele in episodic_return:
+    returns.append(ele[:][0 : min_episode_number])
 
-    # .name is the human-readable name of the run.
-    name_list.append(run.name)
 
-runs_df = pd.DataFrame(
-    {"summary": summary_list, "config": config_list, "name": name_list}
-)
-# print(summary_list[1])
-# print(name_list[1])
-
-# runs_df.to_csv("project.csv")
+average_returns = np.mean(returns, axis=0)
+std_returns = np.std(returns, axis=0)
+x = episode_number[0: int(min_episode_number)]
+confidence_interval = 1.96* std_returns/np.sqrt(len(returns))
+plt.plot(x, average_returns)
+plt.fill_between(x, average_returns-confidence_interval, average_returns+confidence_interval, alpha=0.5)
+plt.show()
