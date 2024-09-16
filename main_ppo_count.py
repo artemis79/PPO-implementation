@@ -16,19 +16,37 @@ from utils import parse_args, make_env
 from utils import IHT, tiles
 from agents.agent import Agent
 
-#######################
-# Place code in utils.py
-features = []
-def get_tiles(iht, observations, tiling_num):
+
+def get_tiles(iht, observations, tiling_num, tiling_size):
+    features = []
     for obs in observations:
         indices = tiles(iht, tiling_num, obs)
-        one_hot = np.zeros((indices.size, indices.max()+1), dtype=int)
-        one_hot[np.arange(indices.size),indices] = 1
+        # print(indices)
+        one_hot = np.zeros((len(indices), tiling_size), dtype=int)
+        one_hot[np.arange(len(indices)),indices] = 1
+        # print(one_hot)
         one_hot = one_hot.flatten()
         features.append(one_hot)
 
     return features
-#######################
+
+
+
+# Think abou the shapes of the vectors
+def intrinsic_reward(counts, feature, action, aciton_space_size, beta=0.1):
+    n_s = []
+    n_a = 0
+    for a in range(action_space_size):
+        count_a = counts[:, a].flatten() * features[i]
+        count_a = np.mean(count_a[np.nonzero(count_a)])
+        n_s.append(count_a)
+        if a == action:
+            n_a = count_a
+
+    n_s = np.sum(n_s)
+    return beta * np.sqrt(2*np.log(n_s)/n_a)
+
+
 
 if __name__ == "__main__":
 
@@ -97,12 +115,18 @@ if __name__ == "__main__":
     num_tiling = 10
     tile_size_dim = 2
     tile_size = np.power(tile_size_dim, len(observation[0]))
-    iht = IHT(np.power(tile_size, len(observation[0])))
-    counts = np.ones(num_tiling, tile_size)
+    iht = IHT(tile_size)
+    action_space_size = envs.action_space.shape[0]
+    counts = np.ones((num_tiling*tile_size, action_space_size))
     
+
+    # Log location
+    position = []
 
     for update in range(1, num_updates + 1):
         # Annealing the rate if instructed to do so.
+        mid_counts = np.zeros((args.num_envs, num_tiling*tile_size, action_space_size))
+
         if args.anneal_lr:
             frac = 1.0 - (update - 1.0) / num_updates
             lrnow = frac * args.learning_rate
@@ -119,15 +143,38 @@ if __name__ == "__main__":
                 action, logprob, _, value = agent.get_action_and_value(next_obs)
                 values[step] = value.flatten()
             actions[step] = action
+
+
+            # Add to count
+            features = get_tiles(iht, obs[step], num_tiling, tile_size)
+            for i in range(args.num_envs):
+                mid_counts[i, :, action[i]] +=  features[i]
+
+                # print(features[i])
+                # print(actions[i])
+                # print(mid_counts[i])
+            
+
+            # print(actions)
             logprobs[step] = logprob
 
             # TRY NOT TO MODIFY: execute the game and log data.
             next_obs, reward, terminated, truncated, info = envs.step(action.cpu().numpy())
-            
+
+            # Log position for occupancy plot 
+            # position.extend(next_obs[:, 0])
+            if args.gym_id == "MountainCar-v0" and args.track:
+                run.log({"position": wandb.Histogram(next_obs[:, 0])})
+
+
+            intrinsic_rewards = []
+            for i in range(args.num_envs):
+                intrinsic_rewards.append(intrinsic_reward(counts, features[i], action[i], action_space_size))
+
+            reward = reward + intrinsic_rewards            
             rewards[step] = torch.tensor(reward).to(device).view(-1)
 
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(terminated).to(device)
-            # print(info)
             for key, items in info.items():
                 if key=='final_info':
                     for item in items:
@@ -147,6 +194,10 @@ if __name__ == "__main__":
                             episode_number += 1
                             break
 
+        # Add counts from rollouts to main count
+        for i in range(args.num_envs):
+            counts += mid_counts[i]
+            
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(1, -1)

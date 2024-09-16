@@ -67,6 +67,8 @@ if __name__ == "__main__":
     dones = torch.zeros((args.num_steps, args.num_envs)).to(device)
     values = torch.zeros((args.num_steps, args.num_envs)).to(device)
 
+    
+
 
     # TRY NOT TO MODIFY: start the game
     episode_number = 0
