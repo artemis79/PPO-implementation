@@ -67,7 +67,7 @@ if __name__ == "__main__":
     dones = torch.zeros((args.num_steps, args.num_envs)).to(device)
     values = torch.zeros((args.num_steps, args.num_envs)).to(device)
 
-    
+
 
 
     # TRY NOT TO MODIFY: start the game
@@ -102,6 +102,10 @@ if __name__ == "__main__":
             # TRY NOT TO MODIFY: execute the game and log data.
             next_obs, reward, terminated, truncated, info = envs.step(action.cpu().numpy())
             rewards[step] = torch.tensor(reward).to(device).view(-1)
+
+            if args.gym_id == "MountainCar-v0" and args.track:
+                run.log({"observation": next_obs, "step": global_step})
+                
 
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(terminated).to(device)
             # print(info)

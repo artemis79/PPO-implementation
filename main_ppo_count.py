@@ -72,6 +72,8 @@ if __name__ == "__main__":
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
     )
 
+    
+
 
     # Seeding
     random.seed(args.seed)
@@ -114,14 +116,23 @@ if __name__ == "__main__":
     # Count setting
     num_tiling = 10
     tile_size_dim = 2
-    tile_size = np.power(tile_size_dim, len(observation[0]))
+    # tile_size = np.power(tile_size_dim, len(observation[0]))
+    tile_size = 100
     iht = IHT(tile_size)
     action_space_size = envs.action_space.shape[0]
     counts = np.ones((num_tiling*tile_size, action_space_size))
-    
 
-    # Log location
-    position = []
+
+    # print(get_tiles(iht, [[0    , 0]], num_tiling, tile_size))
+    # print(get_tiles(iht, [[-0.5 , 0]], num_tiling, tile_size))
+    # print(get_tiles(iht, [[-0.45, 0]], num_tiling, tile_size))
+    # print(get_tiles(iht, [[-0.4 , 0]], num_tiling, tile_size))
+    # print(get_tiles(iht, [[-1.5 , 0]], num_tiling, tile_size))
+    # print(get_tiles(iht, [[-0.7 , 0]], num_tiling, tile_size))
+    # print(get_tiles(iht, [[0.5  , 0]], num_tiling, tile_size))
+    # print(get_tiles(iht, [[-0.5 , 0]], num_tiling, tile_size))
+    # exit(1)
+
 
     for update in range(1, num_updates + 1):
         # Annealing the rate if instructed to do so.
@@ -161,11 +172,9 @@ if __name__ == "__main__":
             # TRY NOT TO MODIFY: execute the game and log data.
             next_obs, reward, terminated, truncated, info = envs.step(action.cpu().numpy())
 
-            # Log position for occupancy plot 
-            # position.extend(next_obs[:, 0])
+            # Log position for occupancy plot  
             if args.gym_id == "MountainCar-v0" and args.track:
-                run.log({"position": wandb.Histogram(next_obs[:, 0])})
-
+                run.log({"observation": next_obs, "step": global_step})
 
             intrinsic_rewards = []
             for i in range(args.num_envs):
@@ -306,6 +315,6 @@ if __name__ == "__main__":
 
 
     envs.close()
-    writer.close()
+    writer.close() 
 
 

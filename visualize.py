@@ -2,37 +2,70 @@ import pandas as pd
 import wandb
 import matplotlib.pyplot as plt
 import numpy as np
+import argparse
 
 
-api = wandb.Api()
-entity, project = "university-alberta", "ppo-implementation"
-runs = api.runs(entity + "/" + project)
+def parse_args_visualize():
+    # fmt: off
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--exp-name", type=str, default="main_ppo",
+        help="the name of the method you want to visualize")
+
+    parser.add_argument("--load", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+        help="if toggled, this experiment will be tracked with Weights and Biases")
+    args = parser.parse_args()
+    return args
+
+if __name__ == "__main__":
+    api = wandb.Api()
+    entity, project = "university-alberta", "ppo-occupancy"
+    runs = api.runs(entity + "/" + project)
 
 
-episodic_return = []
-episode_number = []
-min_episode_number = float('inf')
+    episodic_return = []
+    episode_number = []
+    min_episode_number = float('inf')
+    args = parse_args_visualize()
+    
+    if args.load:
+        x_positions = np.load('tmp/x_positions__' + args.exp_name + '.npy')
+        velocities  = np.load('tmp/velocities__'  + args.exp_name + '.npy')
 
-for run in runs:
-    # .summary contains output keys/values for
-    # metrics such as accuracy.
-    #  We call ._json_dict to omit large files
-    df = run.history(samples=5000, x_axis="episode_number", keys=["episodic_return_per_episode"])
-    if "episodic_return_per_episode" in df and "episode_number" in df:
-        # print(df)
-        episodic_return.append(np.array(df["episodic_return_per_episode"]))
-        episode_number = df["episode_number"].tolist()
-        min_episode_number = min(min_episode_number, episode_number[-1])
+    else:
+        for run in runs:
+            exp_name = run.config['exp_name']
+            gym_id = run.config['gym_id']
+            print(exp_name, run.config['seed'])
+            # .summary contains output keys/values for
+            # metrics such as accuracy.
+            #  We call ._json_dict to omit large files
+            x_positions = []
+            velocities = []
+            df = run.history(samples=50000)
+            i = 0
 
-returns = []
-for ele in episodic_return:
-    returns.append(ele[:][0 : min_episode_number])
+            if exp_name == args.exp_name and gym_id == "MountainCar-v0" and  "observation" in df:
+                positions = df["observation"].to_numpy()
+                for position in positions:
+                    if position and type(position) != float: 
+                        # print(position)
+                        for x, v in position:
+                            print(x , v)
+                            x_positions.append(x)
+                            velocities.append(v)
+                
+        
+        np.save('tmp/x_positions__' + args.exp_name, x_positions)
+        np.save('tmp/velocities__'  + args.exp_name, velocities )
 
 
-average_returns = np.mean(returns, axis=0)
-std_returns = np.std(returns, axis=0)
-x = episode_number[0: int(min_episode_number)]
-confidence_interval = 1.96* std_returns/np.sqrt(len(returns))
-plt.plot(x, average_returns)
-plt.fill_between(x, average_returns-confidence_interval, average_returns+confidence_interval, alpha=0.5)
-plt.show()
+
+    print(x_positions[0: 50])
+    heatmap, xedges, vedges = np.histogram2d(x_positions, velocities, bins=50)
+    extent = [-1.5, 0.5, -1, 1]
+
+    fig, ax = plt.subplots()
+    occupancy = ax.imshow(heatmap.T, extent=extent, origin='lower', cmap='Blues')
+    fig.colorbar(occupancy, ax=ax)
+
+    plt.show()
