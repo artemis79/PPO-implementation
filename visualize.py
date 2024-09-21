@@ -32,6 +32,8 @@ if __name__ == "__main__":
         velocities  = np.load('tmp/velocities__'  + args.exp_name + '.npy')
 
     else:
+        x_positions = []
+        velocities = []
         for run in runs:
             exp_name = run.config['exp_name']
             gym_id = run.config['gym_id']
@@ -39,8 +41,6 @@ if __name__ == "__main__":
             # .summary contains output keys/values for
             # metrics such as accuracy.
             #  We call ._json_dict to omit large files
-            x_positions = []
-            velocities = []
             df = run.history(samples=50000)
             i = 0
 
@@ -48,11 +48,11 @@ if __name__ == "__main__":
                 positions = df["observation"].to_numpy()
                 for position in positions:
                     if position and type(position) != float: 
-                        # print(position)
+                        print(position)
                         for x, v in position:
-                            print(x , v)
                             x_positions.append(x)
                             velocities.append(v)
+
                 
         
         np.save('tmp/x_positions__' + args.exp_name, x_positions)

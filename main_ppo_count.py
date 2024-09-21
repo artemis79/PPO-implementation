@@ -17,10 +17,10 @@ from utils import IHT, tiles
 from agents.agent import Agent
 
 
-def get_tiles(iht, observations, tiling_num, tiling_size):
+def get_tiles(iht, observations, tiling_num, tiling_size, scale):
     features = []
     for obs in observations:
-        indices = tiles(iht, tiling_num, obs)
+        indices = tiles(iht, tiling_num, obs * scale)
         # print(indices)
         one_hot = np.zeros((len(indices), tiling_size), dtype=int)
         one_hot[np.arange(len(indices)),indices] = 1
@@ -33,7 +33,7 @@ def get_tiles(iht, observations, tiling_num, tiling_size):
 
 
 # Think abou the shapes of the vectors
-def intrinsic_reward(counts, feature, action, aciton_space_size, beta=0.1):
+def intrinsic_reward(counts, feature, action, aciton_space_size, beta=1):
     n_s = []
     n_a = 0
     for a in range(action_space_size):
@@ -115,23 +115,16 @@ if __name__ == "__main__":
 
     # Count setting
     num_tiling = 10
-    tile_size_dim = 2
-    # tile_size = np.power(tile_size_dim, len(observation[0]))
-    tile_size = 100
+    tile_size = 300
+    num_tiles = 10
+    observation_high = envs.observation_space.high[0]
+    observation_high[observation_high == float('inf')] = num_tiles
+    observation_low = envs.observation_space.low[0]
+    observation_low[observation_low == float('-inf')] = 0
+    scale = num_tiles / (observation_high - observation_low)
     iht = IHT(tile_size)
     action_space_size = envs.action_space.shape[0]
     counts = np.ones((num_tiling*tile_size, action_space_size))
-
-
-    # print(get_tiles(iht, [[0    , 0]], num_tiling, tile_size))
-    # print(get_tiles(iht, [[-0.5 , 0]], num_tiling, tile_size))
-    # print(get_tiles(iht, [[-0.45, 0]], num_tiling, tile_size))
-    # print(get_tiles(iht, [[-0.4 , 0]], num_tiling, tile_size))
-    # print(get_tiles(iht, [[-1.5 , 0]], num_tiling, tile_size))
-    # print(get_tiles(iht, [[-0.7 , 0]], num_tiling, tile_size))
-    # print(get_tiles(iht, [[0.5  , 0]], num_tiling, tile_size))
-    # print(get_tiles(iht, [[-0.5 , 0]], num_tiling, tile_size))
-    # exit(1)
 
 
     for update in range(1, num_updates + 1):
@@ -157,7 +150,7 @@ if __name__ == "__main__":
 
 
             # Add to count
-            features = get_tiles(iht, obs[step], num_tiling, tile_size)
+            features = get_tiles(iht, obs[step], num_tiling, tile_size, scale)
             for i in range(args.num_envs):
                 mid_counts[i, :, action[i]] +=  features[i]
 
@@ -198,7 +191,6 @@ if __name__ == "__main__":
                                 run.log({"episodic_return": item["episode"]["r"],
                                         "episode_length": item["episode"]["l"],
                                         "episode_number": episode_number})
-
                             
                             episode_number += 1
                             break
@@ -206,7 +198,8 @@ if __name__ == "__main__":
         # Add counts from rollouts to main count
         for i in range(args.num_envs):
             counts += mid_counts[i]
-            
+
+        # print(counts)
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(1, -1)
