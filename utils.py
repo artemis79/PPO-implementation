@@ -80,7 +80,7 @@ def parse_args():
 
 def make_env(gym_id, seed, idx, capture_video, run_name):
     def thunk():
-        env = gym.make(gym_id, render_mode="rgb_array")
+        env = gym.make(gym_id, render_mode="rgb_array").env
         env = TimeLimit(env, max_episode_steps=500)
         env = gym.wrappers.RecordEpisodeStatistics(env)
         if capture_video:

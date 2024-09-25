@@ -3,7 +3,8 @@ import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn
+from mpl_toolkits.axes_grid1 import AxesGrid
+
 
 
 
@@ -20,7 +21,7 @@ def parse_args_visualize():
 
 if __name__ == "__main__":
     api = wandb.Api()
-    entity, project = "university-alberta", "ppo-tmp"
+    entity, project = "university-alberta", "ppo"
     runs = api.runs(entity + "/" + project)
 
 
@@ -30,9 +31,11 @@ if __name__ == "__main__":
     args = parse_args_visualize()
     
     if args.load:
-        x_positions = np.load('tmp/x_positions__' + args.exp_name + '.npy')
-        velocities  = np.load('tmp/velocities__'  + args.exp_name + '.npy')
-
+        x_positions_ppo = np.load('tmp/x_positions__' + 'main_ppo' + '.npy')
+        x_positions_count  = np.load('tmp/x_positions__'  + 'main_ppo_count' + '.npy')
+        velocities_ppo = np.load('tmp/velocities__'  + 'main_ppo' + '.npy')
+        velocities_count = np.load('tmp/velocities__'  + 'main_ppo_count' + '.npy')
+        algorithms = {"PPO": [x_positions_ppo, velocities_ppo], "PPO with count": [x_positions_count, velocities_count]}
     else:
         x_positions = []
         velocities = []
@@ -59,21 +62,80 @@ if __name__ == "__main__":
         np.save('tmp/x_positions__' + args.exp_name, x_positions)
         np.save('tmp/velocities__'  + args.exp_name, velocities )
 
+    if args.load:
+       
+        # plt.bars(heatmap, bins)
 
-    extent = [-1.2, 0.6]
-    bins = np.linspace(extent[0], extent[1], num=50)
+        fig = plt.figure()
+        grid = AxesGrid(fig, 111,
+                nrows_ncols=(2, 1),
+                axes_pad=0.05,
+                share_all=True,
+                label_mode="L",
+                cbar_location="right",
+                cbar_mode="single",
+                )   
+        i = 0
 
-    heatmap, xedges = np.histogram(x_positions, bins=bins)
-    plt.stairs(heatmap, bins)
+        for algo in algorithms.keys():
+            x = algorithms[algo][0]
+            ax = grid[i]
+            extent = [-1.2, 0.6, 0, 1]
+            bins = np.linspace(extent[0], extent[1], num=50)
+            heatmap, xedges = np.histogram(x, bins=bins)
+            cax = ax.imshow(heatmap[np.newaxis,:], cmap="hot", aspect="auto", extent=extent)
+
+            ax.set_yticks([])
+            ax.set_xlim(extent[0], extent[1])
+            # ax[i].title(algo)
+            i += 1
+
+        grid.cbar_axes[0].colorbar(cax)
+
+        for cax in grid.cbar_axes:
+            cax.toggle_label(False)
 
 
-    # plt.pcolormesh(heatmap, cmap='Greys', shading='gouraud')
-    plt.show()
+
+        # plt.pcolormesh(heatmap, cmap='Greys', shading='gouraud')
+        plt.savefig('figures/MountainCar-v0-heatmap')
+        plt.close()
 
 
-    # fig, ax = plt.subplots()
-    # occupancy = ax.imshow(heatmap.T, extent=extent, origin='lower', cmap='Blues')
-    # fig.colorbar(occupancy, ax=ax)
 
 
-    plt.show()
+        fig = plt.figure(figsize=(8, 10))
+        grid = AxesGrid(fig, 111,
+                nrows_ncols=(2, 1),
+                axes_pad=0.05,
+                share_all=True,
+                label_mode="L",
+                cbar_location="right",
+                cbar_mode="single",
+                )   
+        i = 0
+
+        for algo in algorithms.keys():
+            x = algorithms[algo][0]
+            v = algorithms[algo][1]
+            ax = grid[i]
+            extent = [-1.2, 0.6, -1, 1]
+            heatmap, xedges, vedges = np.histogram2d(x, v, bins=50)
+            cax = ax.imshow(heatmap.T, cmap="hot", aspect="auto", extent=extent)
+
+            ax.set_yticks([])
+            ax.set_xlim(extent[0], extent[1])
+            ax.set_ylim(extent[2], extent[3])
+            # ax[i].title(algo)
+            i += 1
+
+        grid.cbar_axes[0].colorbar(cax)
+
+        for cax in grid.cbar_axes:
+            cax.toggle_label(False)
+
+        plt.savefig('figures/MountainCar-v0-position-velocity')
+        plt.close()
+
+        
+
