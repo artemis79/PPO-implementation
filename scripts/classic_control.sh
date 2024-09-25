@@ -2,9 +2,11 @@
 #SBATCH --account=def-mbowling
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
-#SBATCH --time=0-2:59
+#SBATCH --time=0-0:59
 #SBATCH --cpu-freq=Performance
 #SBATCH --array=1-50
+#SBATCH --output=outputs_ppo/ppo_%j.out
+
 
 module load python/3.10.13
 if [ "$SLURM_TMPDIR" == "" ]; then
@@ -28,4 +30,4 @@ git clone --quiet git@github.com:artemis79/PPO-implementation.git
 cd PPO-implementation/
 
 
-python3 main_ppo.py --gym-id "MountainCar-v0" --track --seed $SLURM_ARRAY_TASK_ID --cuda False --total-timesteps 500000 --wandb-project-name "ppo-occupancy"
+python3 main_ppo_count.py --gym-id "MountainCar-v0" --track --seed $SLURM_ARRAY_TASK_ID --cuda False --total-timesteps 100000 --wandb-project-name "ppo"
