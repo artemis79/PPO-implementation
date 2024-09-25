@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --account=def-mbowling
-#SBATCH --cpus-per-task=2
+#SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
 #SBATCH --time=0-2:59
 #SBATCH --cpu-freq=Performance
@@ -28,4 +28,4 @@ git clone --quiet git@github.com:artemis79/PPO-implementation.git
 cd PPO-implementation/
 
 
-python3 main_ppo.py --gym-id "MountainCar-v0" --track --seed 1 --cuda False --total-timesteps 500000 --wandb-project-name "ppo-occupancy"
+python3 main_ppo.py --gym-id "MountainCar-v0" --track --seed $SLURM_ARRAY_TASK_ID --cuda False --total-timesteps 500000 --wandb-project-name "ppo-occupancy"
