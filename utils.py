@@ -5,6 +5,8 @@ import time
 from distutils.util import strtobool
 
 import gymnasium as gym
+from gymnasium.wrappers import TimeLimit
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -34,6 +36,9 @@ def parse_args():
         help="the entity (team) of wandb's project")
     parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="weather to capture videos of the agent performances (check out `videos` folder)")
+
+    parser.add_argument("--aggregate-function", type=str, default='min', nargs="?", const=True
+            help="The function used to aggregate counts in tile coding")
 
     # # Algorithm specific arguments
     parser.add_argument("--num-envs", type=int, default=4,
@@ -76,6 +81,7 @@ def parse_args():
 def make_env(gym_id, seed, idx, capture_video, run_name):
     def thunk():
         env = gym.make(gym_id, render_mode="rgb_array")
+        env = TimeLimit(env, max_episode_steps=500)
         env = gym.wrappers.RecordEpisodeStatistics(env)
         if capture_video:
             if idx == 0:
