@@ -22,26 +22,34 @@ def get_tiles(iht, observations, tiling_num, tiling_size, scale):
     for i in range(len(observations)):
         obs = observations[i]
         indices = tiles(iht, tiling_num, obs * scale)
-        # print(indices)
         one_hot = np.zeros((len(indices), tiling_size), dtype=int)
         one_hot[np.arange(len(indices)),indices] = 1
-        # print(one_hot)
         one_hot = one_hot.flatten()
         features[i] = one_hot
+    
     return features
 
 
 
 # Think abou the shapes of the vectors
-def intrinsic_reward(counts, feature, action, aciton_space_size, beta=1):
+def intrinsic_reward(counts, feature, action, action_space_size, aggregate_function, beta=100):
     n_s = []
     n_a = 0
     for a in range(action_space_size):
-        count_a = counts[:, a].flatten() * features[i]
-        count_a = np.mean(count_a[np.nonzero(count_a)])
+        count_a = counts[:, a].flatten() * feature
+        if aggregate_function == 'min':
+            count_a = np.min(count_a[np.nonzero(count_a)])
+        elif aggregate_function == 'mean':
+            count_a = np.mean(count_a[np.nonzero(count_a)])
+        else:
+            print("not valid aggregate function")
+            print("choose min")
+            count_a = np.min(count_a[np.nonzero(count_a)])
+
         n_s.append(count_a)
         if a == action:
             n_a = count_a
+            break
 
     n_s = np.sum(n_s)
     return beta * np.sqrt(2*np.log(n_s)/n_a)
@@ -114,17 +122,18 @@ if __name__ == "__main__":
 
 
     # Count setting
-    num_tiling = 10
-    tile_size = 3000
-    num_tiles = 200
+    num_tiling = 20
+    tile_size = 300
+    num_tiles = [10, 20]
     observation_high = envs.observation_space.high[0]
-    observation_high[observation_high == float('inf')] = num_tiles
+    # observation_high[observation_high == float('inf')] = num_tiles
     observation_low = envs.observation_space.low[0]
-    observation_low[observation_low == float('-inf')] = 0
+    # observation_low[observation_low == float('-inf')] = 0
     scale = num_tiles / (observation_high - observation_low)
     iht = IHT(tile_size)
     action_space_size = envs.action_space.shape[0]
     counts = np.ones((num_tiling*tile_size, action_space_size))
+    aggregate_function = args.aggregate_function
 
 
     for update in range(1, num_updates + 1):
@@ -151,6 +160,7 @@ if __name__ == "__main__":
 
             # Add to count
             features = get_tiles(iht, obs[step], num_tiling, tile_size, scale)
+            # print(features)
             for i in range(args.num_envs):
                 mid_counts[i, :, action[i]] +=  features[i]
             
@@ -160,14 +170,14 @@ if __name__ == "__main__":
 
             # TRY NOT TO MODIFY: execute the game and log data.
             next_obs, reward, terminated, truncated, info = envs.step(action.cpu().numpy())
-
+            print(next_obs)
             # Log position for occupancy plot  
             if args.gym_id == "MountainCar-v0" and args.track:
                 run.log({"observation": next_obs, "step": global_step})
 
             intrinsic_rewards = []
             for i in range(args.num_envs):
-                intrinsic_rewards.append(intrinsic_reward(counts, features[i], action[i], action_space_size))
+                intrinsic_rewards.append(intrinsic_reward(counts, features[i], action[i], action_space_size, aggregate_function))
 
             reward = reward + intrinsic_rewards            
             rewards[step] = torch.tensor(reward).to(device).view(-1)

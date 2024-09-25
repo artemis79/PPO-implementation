@@ -8,6 +8,7 @@
 #SBATCH --output=outputs_ppo/ppo_%j.out
 
 
+
 module load python/3.10.13
 if [ "$SLURM_TMPDIR" == "" ]; then
     exit 1
@@ -29,5 +30,5 @@ git clone --quiet git@github.com:artemis79/PPO-implementation.git
 
 cd PPO-implementation/
 
+python3 main_ppo.py --gym-id "MountainCar-v0" --track --seed $SLURM_ARRAY_TASK_ID --cuda False --total-timesteps 500000 --wandb-project-name "ppo" --aggregate-function "mean"
 
-python3 main_ppo_count.py --gym-id "MountainCar-v0" --track --seed $SLURM_ARRAY_TASK_ID --cuda False --total-timesteps 100000 --wandb-project-name "ppo"

@@ -104,6 +104,7 @@ if __name__ == "__main__":
             # TRY NOT TO MODIFY: execute the game and log data.
             next_obs, reward, terminated, truncated, info = envs.step(action.cpu().numpy())
             rewards[step] = torch.tensor(reward).to(device).view(-1)
+            print(next_obs)
 
             if args.gym_id == "MountainCar-v0" and args.track:
                 run.log({"observation": next_obs, "step": global_step})
