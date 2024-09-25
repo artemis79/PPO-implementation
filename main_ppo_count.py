@@ -4,7 +4,7 @@ import random
 import time
 from distutils.util import strtobool
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
 import torch.nn as nn
@@ -18,16 +18,16 @@ from agents.agent import Agent
 
 
 def get_tiles(iht, observations, tiling_num, tiling_size, scale):
-    features = []
-    for obs in observations:
+    features = np.zeros((len(observations), tiling_num * tiling_size))
+    for i in range(len(observations)):
+        obs = observations[i]
         indices = tiles(iht, tiling_num, obs * scale)
         # print(indices)
         one_hot = np.zeros((len(indices), tiling_size), dtype=int)
         one_hot[np.arange(len(indices)),indices] = 1
         # print(one_hot)
         one_hot = one_hot.flatten()
-        features.append(one_hot)
-
+        features[i] = one_hot
     return features
 
 
@@ -115,8 +115,8 @@ if __name__ == "__main__":
 
     # Count setting
     num_tiling = 10
-    tile_size = 300
-    num_tiles = 10
+    tile_size = 3000
+    num_tiles = 200
     observation_high = envs.observation_space.high[0]
     observation_high[observation_high == float('inf')] = num_tiles
     observation_low = envs.observation_space.low[0]
@@ -153,10 +153,6 @@ if __name__ == "__main__":
             features = get_tiles(iht, obs[step], num_tiling, tile_size, scale)
             for i in range(args.num_envs):
                 mid_counts[i, :, action[i]] +=  features[i]
-
-                # print(features[i])
-                # print(actions[i])
-                # print(mid_counts[i])
             
 
             # print(actions)

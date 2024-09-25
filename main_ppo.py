@@ -4,7 +4,7 @@ import random
 import time
 from distutils.util import strtobool
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
 import torch.nn as nn
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
             if args.gym_id == "MountainCar-v0" and args.track:
                 run.log({"observation": next_obs, "step": global_step})
-                
+
 
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(terminated).to(device)
             # print(info)

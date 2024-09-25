@@ -1,8 +1,10 @@
-import pandas as pd
 import wandb
+import argparse
+import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import argparse
+import seaborn
+
 
 
 def parse_args_visualize():
@@ -18,7 +20,7 @@ def parse_args_visualize():
 
 if __name__ == "__main__":
     api = wandb.Api()
-    entity, project = "university-alberta", "ppo-occupancy"
+    entity, project = "university-alberta", "ppo-tmp"
     runs = api.runs(entity + "/" + project)
 
 
@@ -43,8 +45,7 @@ if __name__ == "__main__":
             #  We call ._json_dict to omit large files
             df = run.history(samples=50000)
             i = 0
-
-            if exp_name == args.exp_name and gym_id == "MountainCar-v0" and  "observation" in df:
+            if exp_name == args.exp_name and gym_id == "MountainCar-v0" and  "observation":
                 positions = df["observation"].to_numpy()
                 for position in positions:
                     if position and type(position) != float: 
@@ -59,13 +60,20 @@ if __name__ == "__main__":
         np.save('tmp/velocities__'  + args.exp_name, velocities )
 
 
+    extent = [-1.2, 0.6]
+    bins = np.linspace(extent[0], extent[1], num=50)
 
-    print(x_positions[0: 50])
-    heatmap, xedges, vedges = np.histogram2d(x_positions, velocities, bins=50)
-    extent = [-1.5, 0.5, -1, 1]
+    heatmap, xedges = np.histogram(x_positions, bins=bins)
+    plt.stairs(heatmap, bins)
 
-    fig, ax = plt.subplots()
-    occupancy = ax.imshow(heatmap.T, extent=extent, origin='lower', cmap='Blues')
-    fig.colorbar(occupancy, ax=ax)
+
+    # plt.pcolormesh(heatmap, cmap='Greys', shading='gouraud')
+    plt.show()
+
+
+    # fig, ax = plt.subplots()
+    # occupancy = ax.imshow(heatmap.T, extent=extent, origin='lower', cmap='Blues')
+    # fig.colorbar(occupancy, ax=ax)
+
 
     plt.show()
