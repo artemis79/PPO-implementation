@@ -7,12 +7,14 @@ from mpl_toolkits.axes_grid1 import AxesGrid
 
 
 
-
 def parse_args_visualize():
     # fmt: off
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp-name", type=str, default="main_ppo",
         help="the name of the method you want to visualize")
+    
+    parser.add_argument("--aggregate-function", type=str, default="mean",
+        help="")
 
     parser.add_argument("--load", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="if toggled, this experiment will be tracked with Weights and Biases")
@@ -36,19 +38,22 @@ if __name__ == "__main__":
         velocities_ppo = np.load('tmp/velocities__'  + 'main_ppo' + '.npy')
         velocities_count = np.load('tmp/velocities__'  + 'main_ppo_count' + '.npy')
         algorithms = {"PPO": [x_positions_ppo, velocities_ppo], "PPO with count": [x_positions_count, velocities_count]}
+        print([v for v in velocities_count if v > 0.07])
+
     else:
         x_positions = []
         velocities = []
         for run in runs:
             exp_name = run.config['exp_name']
             gym_id = run.config['gym_id']
+            agg_func = run.config['aggregate_function']
             print(exp_name, run.config['seed'])
             # .summary contains output keys/values for
             # metrics such as accuracy.
             #  We call ._json_dict to omit large files
-            df = run.history(samples=50000)
+            df = run.history(samples=500000)
             i = 0
-            if exp_name == args.exp_name and gym_id == "MountainCar-v0" and  "observation":
+            if exp_name == args.exp_name and gym_id == "MountainCar-v0" and  "observation" and args.aggregate_function == agg_func:
                 positions = df["observation"].to_numpy()
                 for position in positions:
                     if position and type(position) != float: 
@@ -59,8 +64,8 @@ if __name__ == "__main__":
 
                 
         
-        np.save('tmp/x_positions__' + args.exp_name, x_positions)
-        np.save('tmp/velocities__'  + args.exp_name, velocities )
+        np.save('tmp/x_positions__' + args.exp_name + "__" + args.aggregate_function, x_positions)
+        np.save('tmp/velocities__'  + args.exp_name + "__" + args.aggregate_function, velocities )
 
     if args.load:
        
@@ -69,7 +74,7 @@ if __name__ == "__main__":
         fig = plt.figure()
         grid = AxesGrid(fig, 111,
                 nrows_ncols=(2, 1),
-                axes_pad=0.05,
+                axes_pad=0.5,
                 share_all=True,
                 label_mode="L",
                 cbar_location="right",
@@ -87,13 +92,13 @@ if __name__ == "__main__":
 
             ax.set_yticks([])
             ax.set_xlim(extent[0], extent[1])
-            # ax[i].title(algo)
+            ax.set_title(algo)
             i += 1
 
         grid.cbar_axes[0].colorbar(cax)
 
         for cax in grid.cbar_axes:
-            cax.toggle_label(False)
+            cax.toggle_label(True)
 
 
 
@@ -107,7 +112,7 @@ if __name__ == "__main__":
         fig = plt.figure(figsize=(8, 10))
         grid = AxesGrid(fig, 111,
                 nrows_ncols=(2, 1),
-                axes_pad=0.05,
+                axes_pad=0.5,
                 share_all=True,
                 label_mode="L",
                 cbar_location="right",
@@ -119,20 +124,20 @@ if __name__ == "__main__":
             x = algorithms[algo][0]
             v = algorithms[algo][1]
             ax = grid[i]
-            extent = [-1.2, 0.6, -1, 1]
+            extent = [-1.2, 0.6, -0.07, 0.07]
             heatmap, xedges, vedges = np.histogram2d(x, v, bins=50)
-            cax = ax.imshow(heatmap.T, cmap="hot", aspect="auto", extent=extent)
+            cax = ax.imshow(heatmap.T, cmap="hot", aspect=10, extent=extent)
 
-            ax.set_yticks([])
+            ax.set_yticks([-0.07, 0.07])
             ax.set_xlim(extent[0], extent[1])
             ax.set_ylim(extent[2], extent[3])
-            # ax[i].title(algo)
+            ax.set_title(algo)
             i += 1
 
         grid.cbar_axes[0].colorbar(cax)
 
         for cax in grid.cbar_axes:
-            cax.toggle_label(False)
+            cax.toggle_label(True)
 
         plt.savefig('figures/MountainCar-v0-position-velocity')
         plt.close()

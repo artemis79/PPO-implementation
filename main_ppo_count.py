@@ -32,7 +32,7 @@ def get_tiles(iht, observations, tiling_num, tiling_size, scale):
 
 
 # Think abou the shapes of the vectors
-def intrinsic_reward(counts, feature, action, action_space_size, aggregate_function, beta=100):
+def intrinsic_reward(counts, feature, action, action_space_size, aggregate_function, beta=1):
     n_s = []
     n_a = 0
     for a in range(action_space_size):
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     # Count setting
     num_tiling = 20
     tile_size = 300
-    num_tiles = [10, 20]
+    num_tiles = [10, 10]
     observation_high = envs.observation_space.high[0]
     # observation_high[observation_high == float('inf')] = num_tiles
     observation_low = envs.observation_space.low[0]
@@ -134,8 +134,6 @@ if __name__ == "__main__":
     action_space_size = envs.action_space.shape[0]
     counts = np.ones((num_tiling*tile_size, action_space_size))
     aggregate_function = args.aggregate_function
-
-
     for update in range(1, num_updates + 1):
         # Annealing the rate if instructed to do so.
         mid_counts = np.zeros((args.num_envs, num_tiling*tile_size, action_space_size))
@@ -144,6 +142,8 @@ if __name__ == "__main__":
             frac = 1.0 - (update - 1.0) / num_updates
             lrnow = frac * args.learning_rate
             optimizer.param_groups[0]["lr"] = lrnow
+
+        returns = np.zeros(args.num_envs)
 
         for step in range(0, args.num_steps):
             
@@ -170,17 +170,20 @@ if __name__ == "__main__":
 
             # TRY NOT TO MODIFY: execute the game and log data.
             next_obs, reward, terminated, truncated, info = envs.step(action.cpu().numpy())
-            print(next_obs)
-            # Log position for occupancy plot  
-            if args.gym_id == "MountainCar-v0" and args.track:
-                run.log({"observation": next_obs, "step": global_step})
 
             intrinsic_rewards = []
             for i in range(args.num_envs):
                 intrinsic_rewards.append(intrinsic_reward(counts, features[i], action[i], action_space_size, aggregate_function))
 
-            reward = reward + intrinsic_rewards            
+            reward = reward + intrinsic_rewards    
+            returns = returns + reward        
             rewards[step] = torch.tensor(reward).to(device).view(-1)
+
+            
+            # Log position for occupancy plot  
+            if args.gym_id == "MountainCar-v0" and args.track:
+                run.log({"observation": next_obs, "reward": reward, "step": global_step})
+
 
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(terminated).to(device)
             for key, items in info.items():
@@ -192,7 +195,6 @@ if __name__ == "__main__":
                             writer.add_scalar("charts/episodic_return_per_episode", item["episode"]["r"], episode_number)
                             writer.add_scalar("charts/episodic_length", item["episode"]["l"], global_step)
                             writer.add_scalar("charts/episodic_length_per_episode", item["episode"]["l"], episode_number)
-
                             if args.track:
                                 run.log({"episodic_return": item["episode"]["r"],
                                         "episode_length": item["episode"]["l"],
@@ -205,7 +207,7 @@ if __name__ == "__main__":
         for i in range(args.num_envs):
             counts += mid_counts[i]
 
-        # print(counts)
+        print(returns)
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(1, -1)
@@ -311,7 +313,12 @@ if __name__ == "__main__":
         writer.add_scalar("losses/explained_variance", explained_var, global_step)
         # print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+        
+        if args.track:
 
+            run.log({"Return_variance": np.var(y_true),
+                     "num_update": update
+                     })
 
     envs.close()
     writer.close() 
