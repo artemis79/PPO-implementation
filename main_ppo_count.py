@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     # Count setting
     num_tiling = 20
-    tile_size = 300
+    tile_size = 1000
     num_tiles = [10, 10]
     observation_high = envs.observation_space.high[0]
     # observation_high[observation_high == float('inf')] = num_tiles
@@ -134,6 +134,7 @@ if __name__ == "__main__":
     action_space_size = envs.action_space.shape[0]
     counts = np.ones((num_tiling*tile_size, action_space_size))
     aggregate_function = args.aggregate_function
+    beta = args.beta
     for update in range(1, num_updates + 1):
         # Annealing the rate if instructed to do so.
         mid_counts = np.zeros((args.num_envs, num_tiling*tile_size, action_space_size))
@@ -173,7 +174,7 @@ if __name__ == "__main__":
 
             intrinsic_rewards = []
             for i in range(args.num_envs):
-                intrinsic_rewards.append(intrinsic_reward(counts, features[i], action[i], action_space_size, aggregate_function))
+                intrinsic_rewards.append(intrinsic_reward(counts, features[i], action[i], action_space_size, aggregate_function, beta))
 
             reward = reward + intrinsic_rewards    
             returns = returns + reward        
@@ -182,7 +183,8 @@ if __name__ == "__main__":
             
             # Log position for occupancy plot  
             if args.gym_id == "MountainCar-v0" and args.track:
-                run.log({"observation": next_obs, "reward": reward, "step": global_step})
+                for i in range(args.num_envs):
+                    run.log({"x_position": next_obs[i][0], "velocity": next_obs[i][1], "reward": reward[i], "step": global_step, "num_update": update})
 
 
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(terminated).to(device)
