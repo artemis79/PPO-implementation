@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 from mpl_toolkits.axes_grid1 import AxesGrid
+from PIL import Image
 
 from ast import literal_eval
 
@@ -24,31 +25,62 @@ def parse_args_visualize():
     return args
 
 
-def r_intrinsic_plot(r_intrinsic, x_position, velocity, update_number):
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+def _find_nearest_index(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return np.unravel_index(idx, array.shape)
 
-    # Make data.
-    X = x_position
-    Y = velocity
-    X, Y = np.meshgrid(X, Y)
-    Z = r_intrinsic
-    ax.set_title("Update_number:" + str(update_number))
 
-    # Plot the surface.
-    surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
-                        linewidth=0, antialiased=False)
+def r_intrinsic_plot(r_intrinsic, x_position, velocity, updates):
+    images = []
+   
+    x = np.arange(-1.2, 0.6, 0.05)
+    y = np.arange(-0.07, 0.07, 0.005)
+    X, Y = np.meshgrid(x, y)
+    Z = np.zeros(X.shape)
 
-    # Customize the z axis.
-    # ax.set_zlim(-1.01, 1.01)
-    ax.zaxis.set_major_locator(LinearLocator(10))
-    # A StrMethodFormatter is used automatically
-    ax.zaxis.set_major_formatter('{x:.02f}')
 
-    # Add a color bar which maps values to colors.
-    fig.colorbar(surf, shrink=0.5, aspect=5)
+    for i in range(len(updates)):
+       
+        p = x_position[updates[i]: updates[i+1]]
+        v = velocity[updates[i]: updates[i+1]]
+        r = r_intrinsic[updates[i]: updates[i+1]]
 
+        for j in range(len(p)):
+            i_X = _find_nearest_index(x, p[j])
+            i_Y = _find_nearest_index(y, v[j])
+            Z[i_X, i_Y] = r[j]
+
+        # Plot the surface.
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"}) 
+
+        ax.axes.set_xlim3d(left=-1.2, right=0.6) 
+        ax.axes.set_ylim3d(bottom=-0.07, top=0.07) 
+        ax.axes.set_zlim3d(bottom=-1, top=1) 
+
+        surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
+                                    linewidth=0, antialiased=False, vmax=1, vmin=-1)
+
+                # Customize the z axis.
+                # ax.set_zlim(-1.01, 1.01)
+        ax.zaxis.set_major_locator(LinearLocator(10))
+                # A StrMethodFormatter is used automatically
+        ax.zaxis.set_major_formatter('{x:.02f}')
+
+                # Add a color bar which maps values to colors.
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+        file_name = "figures/r_heatmap/MountainCar-intrinsic-reward." + "_" + str(i) + '.png'
+        ax.view_init(10, 60)
+        if i > 50:
+            break
+        plt.savefig(file_name)
+        images.append(Image.open(file_name))
+        plt.close()
+        
     plt.show()
-    
+    images[0].save('figures/r_heatmap/main.gif', save_all=True, append_images=images, duration=200, loop=0)
+
+        
 
 if __name__ == "__main__":
     with open('Data/runs.pickle', 'rb') as handle:
@@ -65,24 +97,13 @@ if __name__ == "__main__":
         history = history_list[i]
         break
 
-    observations = list(history["observation"])
-    x_positions = []
-    velocities = []
-    r_intrinsic = []
-    updates = []
-
-    for i in range(len(observations)):
-        if observations[i]:
-            updates.append(list(history["num_update"])[i])
-            for j in range(len(observations[i])):
-                obs = observations[i][j]
-                r_intrinsic.append(history["reward"][j])
-                x_positions.append(obs[0])
-                velocities.append(obs[1])
-                print(i)
+    x_positions = np.array(history['x_position'])
+    velocities = np.array(history['velocity'])
+    r_intrinsic = np.array(history['reward'])
+    updates = np.array(history['num_update'])
+    updates = np.where(updates[:-1] != updates[1:])[0]
+    updates = np.insert(updates, 0, 0)
     
-        
-    print(x_positions)
     r_intrinsic_plot(r_intrinsic, x_positions, velocities, updates)
 
         

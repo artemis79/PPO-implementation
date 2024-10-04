@@ -70,8 +70,10 @@ def parse_args():
         help="the maximum norm for the gradient clipping")
     parser.add_argument("--target-kl", type=float, default=None,
         help="the target KL divergence threshold")
-    parser.add_argument("--beta", type=float, default=None,
+    parser.add_argument("--beta", type=float, default=1,
         help="count-based exploration coeficient")
+    parser.add_argument("--count-start", type=float, default=1,
+        help="What number does the counts start from")
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)

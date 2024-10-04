@@ -49,7 +49,6 @@ def intrinsic_reward(counts, feature, action, action_space_size, aggregate_funct
         n_s.append(count_a)
         if a == action:
             n_a = count_a
-            break
 
     n_s = np.sum(n_s)
     return beta * np.sqrt(2*np.log(n_s)/n_a)
@@ -132,13 +131,16 @@ if __name__ == "__main__":
     scale = num_tiles / (observation_high - observation_low)
     iht = IHT(tile_size)
     action_space_size = envs.action_space.shape[0]
-    counts = np.ones((num_tiling*tile_size, action_space_size))
+    counts = np.ones((num_tiling*tile_size, action_space_size)) * args.count_start
     aggregate_function = args.aggregate_function
     beta = args.beta
+
     for update in range(1, num_updates + 1):
         # Annealing the rate if instructed to do so.
         mid_counts = np.zeros((args.num_envs, num_tiling*tile_size, action_space_size))
-
+        # print("=======================")
+        # print("Counts")
+        # print(counts)
         if args.anneal_lr:
             frac = 1.0 - (update - 1.0) / num_updates
             lrnow = frac * args.learning_rate
@@ -185,7 +187,8 @@ if __name__ == "__main__":
             if args.gym_id == "MountainCar-v0" and args.track:
                 for i in range(args.num_envs):
                     run.log({"x_position": next_obs[i][0], "velocity": next_obs[i][1], "reward": reward[i], "step": global_step, "num_update": update})
-
+                    if next_obs[i][0] > -0.2:
+                        print(next_obs[i][0])
 
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(terminated).to(device)
             for key, items in info.items():
@@ -209,7 +212,6 @@ if __name__ == "__main__":
         for i in range(args.num_envs):
             counts += mid_counts[i]
 
-        print(returns)
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(1, -1)
