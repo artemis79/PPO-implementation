@@ -72,7 +72,7 @@ def r_intrinsic_plot(r_intrinsic, x_position, velocity, updates):
 
                 # Add a color bar which maps values to colors.
         fig.colorbar(surf, shrink=0.5, aspect=5)
-        file_name = "figures/r_heatmap/3d/MountainCar-intrinsic-reward." + "_" + str(i) + '.png'
+        file_name = "figures/r_heatmap/3d/MountainCar-intrinsic-reward" + "_" + str(i) + '.png'
         ax.view_init(10, 60)
         plt.savefig(file_name)
         images.append(Image.open(file_name))
@@ -121,16 +121,46 @@ def r_intrinsic_heatmap(r_intrinsic, x_position, velocity, updates):
        
                 # Add a color bar which maps values to colors.
         fig.colorbar(surf, shrink=0.5, aspect=5)
-        file_name = "figures/r_heatmap/2d/MountainCar-intrinsic-reward." + "_" + str(i) + '.png'
+        file_name = "figures/observations_heatmap/r_heatmap/2d/MountainCar-intrinsic-reward" + "_" + str(i) + '.png'
         # ax.view_init(10, 60)
         plt.savefig(file_name)
         images.append(Image.open(file_name))
         plt.close()
 
-    images[0].save('figures/r_heatmap/2d/main.gif', save_all=True, append_images=images, duration=200, loop=0)
+    images[0].save('figures/r_heatmap/2d/main.gif', save_all=True,append_images=images, duration=200, loop=0)
 
+
+def observation_heatmap(x_position, velocity, updates):
+    images = []
+
+    for i in range(1300):
+        print(i)
+        p = x_position[0: updates[i+1]]
+        v = velocity[0: updates[i+1]]
+
+
+        fig, ax = plt.subplots() 
+        extent = [-1.2, 0.6, -0.07, 0.07]
+        heatmap, _, _ = np.histogram2d(p, v, bins=70, range=[[-1.2, 0.6], [-0.07, 0.07]])
+        heatmap = ax.imshow(heatmap.T, cmap="hot", aspect='auto', extent=extent)
+
+        ax.set_yticks([])
+        ax.set_xlim(extent[0], extent[1])
+        ax.set_title("PPO with counts")
+        i += 1
+        fig.colorbar(heatmap, shrink=0.5, aspect=5)
+        file_name = "figures/observations_heatmap/position_velocity/MountainCar-intrinsic-reward" + "_" + str(i) + '.png'
+        # ax.view_init(10, 60)
+        plt.savefig(file_name)
+        images.append(Image.open(file_name))
+        plt.close()
         
+    images[0].save('figures/observations_heatmap/position_velocity/main.gif', save_all=True,append_images=images, duration=200, loop=0)
 
+
+
+def position_heatmap():
+    pass
         
 
 if __name__ == "__main__":
@@ -156,9 +186,15 @@ if __name__ == "__main__":
     updates = np.insert(updates, 0, 0)
     
     # r_intrinsic_plot(r_intrinsic, x_positions, velocities, updates)
-    r_intrinsic_heatmap(r_intrinsic, x_positions, velocities, updates)
+    # r_intrinsic_heatmap(r_intrinsic, x_positions, velocities, updates)
+    observation_heatmap(x_positions, velocities, updates)
 
-        
+
+
+
+
+
+
     # api = wandb.Api()
     # entity, project = "university-alberta", "ppo"
     # runs = api.runs(entity + "/" + project)
