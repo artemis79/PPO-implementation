@@ -163,7 +163,6 @@ if __name__ == "__main__":
 
             # Add to count
             features = get_tiles(iht, obs[step], num_tiling, tile_size, scale)
-            # print(features)
             for i in range(args.num_envs):
                 mid_counts[i, :, action[i]] +=  features[i]
             
@@ -178,6 +177,10 @@ if __name__ == "__main__":
             for i in range(args.num_envs):
                 intrinsic_rewards.append(intrinsic_reward(counts, features[i], action[i], action_space_size, aggregate_function, beta))
 
+            for i in range(args.num_envs):
+                if not intrinsic_rewards[i]:
+                    print("Intrinsic_reward is nan")
+                    
             reward = reward + intrinsic_rewards    
             returns = returns + reward        
             rewards[step] = torch.tensor(reward).to(device).view(-1)
@@ -209,9 +212,9 @@ if __name__ == "__main__":
                             break
 
         # Add counts from rollouts to main count
-        for i in range(args.num_envs):
-            counts += mid_counts[i]
 
+        counts += np.sum(mid_counts, axis=0)
+        print(returns)
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(1, -1)

@@ -3,11 +3,11 @@ import wandb
 api = wandb.Api()
 
 # Project is specified by <entity/project-name>
-runs = api.runs("university-alberta/ppo-tmp")
+runs = api.runs("university-alberta/ppo")
 
 history_list, summary_list, config_list, name_list = [], [], [], []
 for run in runs: 
-    if run.name != "MountainCar-v0__main_ppo_count__1__1727993481":
+    if run.name != "MountainCar-v0__main_ppo_count__1__1728335689":
         continue
 
     summary_list.append(run.summary._json_dict)

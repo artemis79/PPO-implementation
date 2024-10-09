@@ -35,12 +35,12 @@ def r_intrinsic_plot(r_intrinsic, x_position, velocity, updates):
     images = []
    
     x = np.arange(-1.2, 0.6, 0.05)
-    y = np.arange(-0.07, 0.07, 0.005)
+    y = np.arange(-0.07, 0.07, 0.001)
     X, Y = np.meshgrid(x, y)
     Z = np.zeros(X.shape)
 
 
-    for i in range(len(updates)):
+    for i in range(1500):
        
         p = x_position[updates[i]: updates[i+1]]
         v = velocity[updates[i]: updates[i+1]]
@@ -52,6 +52,9 @@ def r_intrinsic_plot(r_intrinsic, x_position, velocity, updates):
             Z[i_X, i_Y] = r[j]
 
         # Plot the surface.
+        if i % 5 != 0:
+            continue
+        print(i)
         fig, ax = plt.subplots(subplot_kw={"projection": "3d"}) 
 
         ax.axes.set_xlim3d(left=-1.2, right=0.6) 
@@ -69,16 +72,64 @@ def r_intrinsic_plot(r_intrinsic, x_position, velocity, updates):
 
                 # Add a color bar which maps values to colors.
         fig.colorbar(surf, shrink=0.5, aspect=5)
-        file_name = "figures/r_heatmap/MountainCar-intrinsic-reward." + "_" + str(i) + '.png'
+        file_name = "figures/r_heatmap/3d/MountainCar-intrinsic-reward." + "_" + str(i) + '.png'
         ax.view_init(10, 60)
-        if i > 50:
-            break
         plt.savefig(file_name)
         images.append(Image.open(file_name))
         plt.close()
         
     plt.show()
     images[0].save('figures/r_heatmap/main.gif', save_all=True, append_images=images, duration=200, loop=0)
+
+def r_intrinsic_heatmap(r_intrinsic, x_position, velocity, updates):
+    images = []
+   
+    x = np.arange(-1.2, 0.6, 0.05)
+    y = np.arange(-0.07, 0.07, 0.005)
+    X, Y = np.meshgrid(x, y)
+    Z = np.zeros(X.shape)
+
+    levels = np.linspace(-1, 5, 20)
+    x = X.flatten()
+    y = Y.flatten()
+
+    for i in range(1300):
+        p = x_position[updates[i]: updates[i+1]]
+        v = velocity[updates[i]: updates[i+1]]
+        r = r_intrinsic[updates[i]: updates[i+1]]
+
+        for j in range(len(p)):
+            if np.isnan(r[j]):
+                continue
+            i_X = _find_nearest_index(X, p[j])[1]
+            i_Y = _find_nearest_index(Y, v[j])[0]
+            Z[i_X, i_Y] = r[j]
+        
+        # Plot the surface.
+        if i % 5 != 0:
+            continue
+        print(i)
+        fig, ax = plt.subplots() 
+
+        
+        ax.axes.set_xlim(left=-1.2, right=0.6) 
+        ax.axes.set_ylim(bottom=-0.07, top=0.07) 
+        extent = [-1.2, 0.6, -0.07, 0.07]
+        surf = ax.tricontourf(x, y, Z.flatten(), levels=levels)
+                # Customize the z axis.
+                # ax.set_zlim(-1.01, 1.01)
+       
+                # Add a color bar which maps values to colors.
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+        file_name = "figures/r_heatmap/2d/MountainCar-intrinsic-reward." + "_" + str(i) + '.png'
+        # ax.view_init(10, 60)
+        plt.savefig(file_name)
+        images.append(Image.open(file_name))
+        plt.close()
+
+    images[0].save('figures/r_heatmap/2d/main.gif', save_all=True, append_images=images, duration=200, loop=0)
+
+        
 
         
 
@@ -104,10 +155,10 @@ if __name__ == "__main__":
     updates = np.where(updates[:-1] != updates[1:])[0]
     updates = np.insert(updates, 0, 0)
     
-    r_intrinsic_plot(r_intrinsic, x_positions, velocities, updates)
+    # r_intrinsic_plot(r_intrinsic, x_positions, velocities, updates)
+    r_intrinsic_heatmap(r_intrinsic, x_positions, velocities, updates)
 
         
-
     # api = wandb.Api()
     # entity, project = "university-alberta", "ppo"
     # runs = api.runs(entity + "/" + project)
