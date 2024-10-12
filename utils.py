@@ -74,6 +74,8 @@ def parse_args():
         help="count-based exploration coeficient")
     parser.add_argument("--count-start", type=float, default=1,
         help="What number does the counts start from")
+    parser.add_argument("--max_episode_steps", type=float, default=200,
+        help="Maximum number of time-steps in each episode before it truncates")
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
@@ -81,10 +83,10 @@ def parse_args():
     return args
 
 
-def make_env(gym_id, seed, idx, capture_video, run_name):
+def make_env(gym_id, seed, idx, capture_video, run_name, max_episode_steps=200):
     def thunk():
         env = gym.make(gym_id, render_mode="rgb_array").env
-        env = TimeLimit(env, max_episode_steps=200)
+        env = TimeLimit(env, max_episode_steps=max_episode_steps)
         env = gym.wrappers.RecordEpisodeStatistics(env)
         if capture_video:
             if idx == 0:
