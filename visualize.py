@@ -47,8 +47,8 @@ def r_intrinsic_plot(r_intrinsic, x_position, velocity, updates):
         r = r_intrinsic[updates[i]: updates[i+1]]
 
         for j in range(len(p)):
-            i_X = _find_nearest_index(x, p[j])
-            i_Y = _find_nearest_index(y, v[j])
+            i_Y = _find_nearest_index(X, p[j])[1]
+            i_X = _find_nearest_index(Y, v[j])[0]
             Z[i_X, i_Y] = r[j]
 
         # Plot the surface.
@@ -79,7 +79,7 @@ def r_intrinsic_plot(r_intrinsic, x_position, velocity, updates):
         plt.close()
         
     plt.show()
-    images[0].save('figures/r_heatmap/main.gif', save_all=True, append_images=images, duration=200, loop=0)
+    images[0].save('figures/r_heatmap/3d/main.gif', save_all=True, append_images=images, duration=200, loop=0)
 
 def r_intrinsic_heatmap(r_intrinsic, x_position, velocity, updates):
     images = []
@@ -89,7 +89,7 @@ def r_intrinsic_heatmap(r_intrinsic, x_position, velocity, updates):
     X, Y = np.meshgrid(x, y)
     Z = np.zeros(X.shape)
 
-    levels = np.linspace(-1, 5, 20)
+    levels = np.linspace(-1, 1, 20)
     x = X.flatten()
     y = Y.flatten()
 
@@ -121,7 +121,7 @@ def r_intrinsic_heatmap(r_intrinsic, x_position, velocity, updates):
        
                 # Add a color bar which maps values to colors.
         fig.colorbar(surf, shrink=0.5, aspect=5)
-        file_name = "figures/observations_heatmap/r_heatmap/2d/MountainCar-intrinsic-reward" + "_" + str(i) + '.png'
+        file_name = "figures/r_heatmap/2d/MountainCar-intrinsic-reward" + "_" + str(i) + '.png'
         # ax.view_init(10, 60)
         plt.savefig(file_name)
         images.append(Image.open(file_name))
@@ -142,13 +142,14 @@ def observation_heatmap(x_position, velocity, updates):
         fig, ax = plt.subplots() 
         extent = [-1.2, 0.6, -0.07, 0.07]
         heatmap, _, _ = np.histogram2d(p, v, bins=70, range=[[-1.2, 0.6], [-0.07, 0.07]])
-        heatmap = ax.imshow(heatmap.T, cmap="hot", aspect='auto', extent=extent)
+        heatmap = ax.imshow(heatmap.T, cmap="hot", aspect='auto', extent=extent, vmin=0, vmax=1000)
 
         ax.set_yticks([])
         ax.set_xlim(extent[0], extent[1])
         ax.set_title("PPO with counts")
         i += 1
-        fig.colorbar(heatmap, shrink=0.5, aspect=5)
+        
+        fig.colorbar(heatmap, ax=ax, extend='both', aspect=5)
         file_name = "figures/observations_heatmap/position_velocity/MountainCar-intrinsic-reward" + "_" + str(i) + '.png'
         # ax.view_init(10, 60)
         plt.savefig(file_name)
@@ -186,7 +187,7 @@ if __name__ == "__main__":
     updates = np.insert(updates, 0, 0)
     
     # r_intrinsic_plot(r_intrinsic, x_positions, velocities, updates)
-    # r_intrinsic_heatmap(r_intrinsic, x_positions, velocities, updates)
+    r_intrinsic_heatmap(r_intrinsic, x_positions, velocities, updates)
     observation_heatmap(x_positions, velocities, updates)
 
 

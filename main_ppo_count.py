@@ -121,9 +121,9 @@ if __name__ == "__main__":
 
 
     # Count setting
-    num_tiling = 20
+    num_tiling = 10
     tile_size = 1000
-    num_tiles = [10, 10]
+    num_tiles = [4, 4]
     observation_high = envs.observation_space.high[0]
     # observation_high[observation_high == float('inf')] = num_tiles
     observation_low = envs.observation_space.low[0]
@@ -162,9 +162,10 @@ if __name__ == "__main__":
 
 
             # Add to count
-            features = get_tiles(iht, obs[step], num_tiling, tile_size, scale)
-            for i in range(args.num_envs):
-                mid_counts[i, :, action[i]] +=  features[i]
+            if args.count:
+                features = get_tiles(iht, obs[step], num_tiling, tile_size, scale)
+                for i in range(args.num_envs):
+                    mid_counts[i, :, action[i]] +=  features[i]
             
 
             # print(actions)
@@ -173,15 +174,17 @@ if __name__ == "__main__":
             # TRY NOT TO MODIFY: execute the game and log data.
             next_obs, reward, terminated, truncated, info = envs.step(action.cpu().numpy())
 
-            intrinsic_rewards = []
-            for i in range(args.num_envs):
-                intrinsic_rewards.append(intrinsic_reward(counts, features[i], action[i], action_space_size, aggregate_function, beta))
+            if args.count:
+                intrinsic_rewards = []
+                for i in range(args.num_envs):
+                    if args.update_counts_step:
+                        intrinsic_rewards.append(intrinsic_reward(counts+mid_counts[i], features[i], action[i], action_space_size, aggregate_function, beta))
+                    else:
+                        intrinsic_rewards.append(intrinsic_reward(counts, features[i], action[i], action_space_size, aggregate_function, beta))
 
-            for i in range(args.num_envs):
-                if not intrinsic_rewards[i]:
-                    print("Intrinsic_reward is nan")
+
+                reward = reward + intrinsic_rewards
                     
-            reward = reward + intrinsic_rewards    
             returns = returns + reward        
             rewards[step] = torch.tensor(reward).to(device).view(-1)
 
@@ -215,6 +218,12 @@ if __name__ == "__main__":
 
         counts += np.sum(mid_counts, axis=0)
         print(returns)
+        if args.track:
+
+            run.log({"Return_variance": np.var(returns),
+                     "num_update": update
+                     })
+            
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(next_obs).reshape(1, -1)
@@ -306,6 +315,7 @@ if __name__ == "__main__":
                 if approx_kl > args.target_kl:
                     break
 
+            
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)
         explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
@@ -321,11 +331,6 @@ if __name__ == "__main__":
         # print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
         
-        if args.track:
-
-            run.log({"Return_variance": np.var(y_true),
-                     "num_update": update
-                     })
 
     envs.close()
     writer.close() 

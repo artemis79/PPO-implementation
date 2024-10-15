@@ -36,6 +36,10 @@ def parse_args():
         help="the entity (team) of wandb's project")
     parser.add_argument("--capture-video", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="weather to capture videos of the agent performances (check out `videos` folder)")
+    parser.add_argument("--count", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+        help="To add intrinsic rewards with count or just use plain ppo")
+    parser.add_argument("--update-counts-step", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
+        help="Update the counts along every trajectory")
     parser.add_argument("--aggregate-function", type=str, default='min', nargs="?", const=True,
             help="The function used to aggregate counts in tile coding")
 
@@ -74,7 +78,7 @@ def parse_args():
         help="count-based exploration coeficient")
     parser.add_argument("--count-start", type=float, default=1,
         help="What number does the counts start from")
-    parser.add_argument("--max_episode_steps", type=float, default=200,
+    parser.add_argument("--max-episode-steps", type=float, default=500,
         help="Maximum number of time-steps in each episode before it truncates")
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)

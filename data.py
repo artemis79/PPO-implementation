@@ -7,7 +7,7 @@ runs = api.runs("university-alberta/ppo")
 
 history_list, summary_list, config_list, name_list = [], [], [], []
 for run in runs: 
-    if run.name != "MountainCar-v0__main_ppo_count__1__1728335689":
+    if run.name != "MountainCar-v0__main_ppo__7__1727414253":
         continue
 
     summary_list.append(run.summary._json_dict)
@@ -21,6 +21,7 @@ for run in runs:
     # .name is the human-readable name of the run.
     name_list.append(run.name)
     print(run.name)
+    print(config_list)
     break
     
 
