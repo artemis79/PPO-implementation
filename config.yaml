@@ -1,0 +1,28 @@
+program: main_ppo_count.py
+name: mountaincar-ppo-count-sweep
+method: random
+metric:
+  goal: maximize
+  name: episodic_return
+parameters:
+  gym-id:
+    value: "MountainCar-v0"
+
+  wandb-project-name:
+    value: "ppo-tmp"
+
+  num-steps:
+    values: [16, 32, 64]
+
+  total-timesteps:
+    value: 1000000
+
+  count:
+    value: True
+
+  aggregate-function: 
+    values: ['min', 'mean']
+
+  anneal-lr:
+    values: [True, False]
+    
