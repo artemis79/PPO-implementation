@@ -190,11 +190,11 @@ if __name__ == "__main__":
 
             
             # Log position for occupancy plot  
-            if args.gym_id == "MountainCar-v0" and args.track:
-                for i in range(args.num_envs):
-                    run.log({"x_position": next_obs[i][0], "velocity": next_obs[i][1], "reward": reward[i], "step": global_step, "num_update": update})
-                    if next_obs[i][0] > -0.2:
-                        print(next_obs[i][0])
+            # if args.gym_id == "MountainCar-v0" and args.track:
+            #     for i in range(args.num_envs):
+            #         run.log({"x_position": next_obs[i][0], "velocity": next_obs[i][1], "reward": reward[i], "step": global_step, "num_update": update})
+            #         if next_obs[i][0] > -0.2:
+            #             print(next_obs[i][0])
 
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(terminated).to(device)
             for key, items in info.items():
