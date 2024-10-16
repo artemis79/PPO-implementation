@@ -30,4 +30,4 @@ git clone --quiet git@github.com:artemis79/PPO-implementation.git
 
 cd PPO-implementation/
 
-wandb agent university-alberta/sweeps_demo/xwhtfmw6
+wandb agent university-alberta/ppo-tmp/qxspt3eu

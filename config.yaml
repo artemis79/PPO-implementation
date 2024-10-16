@@ -11,18 +11,32 @@ parameters:
   wandb-project-name:
     value: "ppo-tmp"
 
-  num-steps:
-    values: [16, 32, 64]
-
-  total-timesteps:
-    value: 1000000
-
-  count:
+  track:
     value: True
 
+  num-steps:
+    values: [16, 32, 64, 128]
+
+  total-timesteps:
+    value: 500000
+
+  count:
+    values: [True, False]
+
+  update-counts-step:
+    values: [True, False]
+
   aggregate-function: 
-    values: ['min', 'mean']
+    value : 'mean'
 
   anneal-lr:
-    values: [True, False]
+    value: False
+
+
+  seed: 
+    values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10 , 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
+
+  
+
+  
     

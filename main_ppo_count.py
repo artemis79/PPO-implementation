@@ -118,7 +118,7 @@ if __name__ == "__main__":
     next_obs = torch.Tensor(observation).to(device)
     next_done = torch.zeros(args.num_envs).to(device)
     num_updates = args.total_timesteps // args.batch_size
-
+    max_return = float('-inf')
 
     # Count setting
     num_tiling = 10
@@ -206,10 +206,13 @@ if __name__ == "__main__":
                             writer.add_scalar("charts/episodic_return_per_episode", item["episode"]["r"], episode_number)
                             writer.add_scalar("charts/episodic_length", item["episode"]["l"], global_step)
                             writer.add_scalar("charts/episodic_length_per_episode", item["episode"]["l"], episode_number)
+
+                            max_return = max(max_return, item["episode"]["r"])
                             if args.track:
                                 run.log({"episodic_return": item["episode"]["r"],
                                         "episode_length": item["episode"]["l"],
                                         "episode_number": episode_number})
+            
                             
                             episode_number += 1
                             break

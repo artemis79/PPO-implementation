@@ -78,7 +78,7 @@ def parse_args():
         help="count-based exploration coeficient")
     parser.add_argument("--count-start", type=float, default=1,
         help="What number does the counts start from")
-    parser.add_argument("--max-episode-steps", type=float, default=500,
+    parser.add_argument("--max-episode-steps", type=float, default=200,
         help="Maximum number of time-steps in each episode before it truncates")
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps)
