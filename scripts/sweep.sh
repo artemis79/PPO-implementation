@@ -31,4 +31,4 @@ git clone --quiet git@github.com:artemis79/PPO-implementation.git
 cd PPO-implementation/
 mkdir all_runs
 
-wandb agent university-alberta/ppo-tmp/qxspt3eu --count 
+wandb agent university-alberta/sweeps_demo/xcpi8kk2 --count 7
