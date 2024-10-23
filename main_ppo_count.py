@@ -3,6 +3,7 @@ import os
 import random
 import time
 from distutils.util import strtobool
+from logger import Logger
 
 import gymnasium as gym
 import numpy as np
@@ -78,8 +79,10 @@ if __name__ == "__main__":
         "hyperparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
     )
+    hyperparameters = "|".join([f"{key}={value}" for key, value in vars(args).items()])
+    print(hyperparameters)
+    logger = Logger(hyperparameters)
 
-    
 
 
     # Seeding
@@ -134,6 +137,7 @@ if __name__ == "__main__":
     counts = np.ones((num_tiling*tile_size, action_space_size)) * args.count_start
     aggregate_function = args.aggregate_function
     beta = args.beta
+    total_compute_steps = 0
 
     for update in range(1, num_updates + 1):
         # Annealing the rate if instructed to do so.
@@ -182,21 +186,17 @@ if __name__ == "__main__":
                     else:
                         intrinsic_rewards.append(intrinsic_reward(counts, features[i], action[i], action_space_size, aggregate_function, beta))
 
-
                 reward = reward + intrinsic_rewards
                     
             returns = returns + reward        
             rewards[step] = torch.tensor(reward).to(device).view(-1)
 
             
-            # Log position for occupancy plot  
-            # if args.gym_id == "MountainCar-v0" and args.track:
-            #     for i in range(args.num_envs):
-            #         run.log({"x_position": next_obs[i][0], "velocity": next_obs[i][1], "reward": reward[i], "step": global_step, "num_update": update})
-            #         if next_obs[i][0] > -0.2:
-            #             print(next_obs[i][0])
+
 
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(terminated).to(device)
+            
+            i_environment = 0
             for key, items in info.items():
                 if key=='final_info':
                     for item in items:
@@ -206,23 +206,22 @@ if __name__ == "__main__":
                             writer.add_scalar("charts/episodic_return_per_episode", item["episode"]["r"], episode_number)
                             writer.add_scalar("charts/episodic_length", item["episode"]["l"], global_step)
                             writer.add_scalar("charts/episodic_length_per_episode", item["episode"]["l"], episode_number)
-
                             max_return = max(max_return, item["episode"]["r"])
+                            total_compute_steps += item["episode"]["r"][0]
+                            # Log episodic return to 
+                            logger.log_episode_return([item["episode"]["r"][0], total_compute_steps, episode_number])
+
                             if args.track:
                                 run.log({"episodic_return": item["episode"]["r"],
                                         "episode_length": item["episode"]["l"],
-                                        "episode_number": episode_number})
-            
-                            
-                            episode_number += 1
-                            break
+                                        "global_step": global_step,}
+                                        )
+                    episode_number += 1
 
         # Add counts from rollouts to main count
 
         counts += np.sum(mid_counts, axis=0)
-        print(returns)
         if args.track:
-
             run.log({"Return_variance": np.var(returns),
                      "num_update": update
                      })
@@ -256,12 +255,17 @@ if __name__ == "__main__":
                 advantages = returns - values
 
         # flatten the batch
+        b_rewards = rewards.reshape(-1,)
         b_obs = obs.reshape((-1,) + envs.single_observation_space.shape)
         b_logprobs = logprobs.reshape(-1)
         b_actions = actions.reshape((-1,) + envs.single_action_space.shape)
         b_advantages = advantages.reshape(-1)
         b_returns = returns.reshape(-1)
         b_values = values.reshape(-1)
+
+        # Log observations and rewards
+        logger.log_observation(b_obs, update)
+        logger.log_rewards(b_rewards, update)
 
         # Optimizing the policy and value network
         b_inds = np.arange(args.batch_size)
@@ -333,9 +337,22 @@ if __name__ == "__main__":
         writer.add_scalar("losses/explained_variance", explained_var, global_step)
         # print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+
+        if args.track:
+            run.log({"charts/learning_rate": optimizer.param_groups[0]["lr"], "global_step": global_step})
+            run.log({"losses/value_loss": v_loss.item(), "global_step": global_step})
+            run.log({"losses/policy_loss": pg_loss.item(),"global_step": global_step})
+            run.log({"losses/entropy": entropy_loss.item(),"global_step": global_step})
+            run.log({"losses/old_approx_kl": old_approx_kl.item(),"global_step": global_step})
+            run.log({"losses/approx_kl": approx_kl.item(),"global_step": global_step})
+            run.log({"losses/clipfrac": np.mean(clipfracs), "global_step": global_step})
+            run.log({"losses/explained_variance": explained_var, "global_step": global_step})
+            run.log({"charts/SPS": int(global_step / (time.time() - start_time)), "global_step": global_step})
         
 
     envs.close()
     writer.close() 
+    
+
 
 

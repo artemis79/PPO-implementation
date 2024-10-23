@@ -32,3 +32,4 @@ cd PPO-implementation/
 
 python3 main_ppo.py --gym-id "MountainCar-v0" --track --seed $SLURM_ARRAY_TASK_ID --cuda False --total-timesteps 1000000 --wandb-project-name "ppo" --aggregate-function "mean"
 
+python3 main_ppo.py --gym-id "MountainCar-v0" --track --seed 1 --cuda False --total-timesteps 1000000 --wandb-project-name "ppo_plots" --aggregate-function "mean" --count --update-counts-step --num-steps 64

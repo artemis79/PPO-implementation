@@ -59,7 +59,10 @@ def r_intrinsic_plot(r_intrinsic, x_position, velocity, updates):
 
         ax.axes.set_xlim3d(left=-1.2, right=0.6) 
         ax.axes.set_ylim3d(bottom=-0.07, top=0.07) 
-        ax.axes.set_zlim3d(bottom=-1, top=1) 
+        ax.axes.set_zlim3d(bottom=-1, top=1)
+        ax.set_ylabel("velocity")
+        ax.set_xlabel("position")
+        ax.set_zlabel("intrinsic reward") 
 
         surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
                                     linewidth=0, antialiased=False, vmax=1, vmin=-1)
@@ -93,7 +96,7 @@ def r_intrinsic_heatmap(r_intrinsic, x_position, velocity, updates):
     x = X.flatten()
     y = Y.flatten()
 
-    for i in range(1300):
+    for i in range(2000):
         p = x_position[updates[i]: updates[i+1]]
         v = velocity[updates[i]: updates[i+1]]
         r = r_intrinsic[updates[i]: updates[i+1]]
@@ -133,7 +136,7 @@ def r_intrinsic_heatmap(r_intrinsic, x_position, velocity, updates):
 def observation_heatmap(x_position, velocity, updates):
     images = []
 
-    for i in range(1300):
+    for i in range(2000):
         print(i)
         p = x_position[0: updates[i+1]]
         v = velocity[0: updates[i+1]]
@@ -142,10 +145,12 @@ def observation_heatmap(x_position, velocity, updates):
         fig, ax = plt.subplots() 
         extent = [-1.2, 0.6, -0.07, 0.07]
         heatmap, _, _ = np.histogram2d(p, v, bins=70, range=[[-1.2, 0.6], [-0.07, 0.07]])
-        heatmap = ax.imshow(heatmap.T, cmap="hot", aspect='auto', extent=extent, vmin=0, vmax=1000)
+        heatmap = ax.imshow(heatmap.T, aspect='auto', extent=extent, vmin=0, vmax=100)
 
         ax.set_yticks([])
         ax.set_xlim(extent[0], extent[1])
+        ax.set_xlabel("position")
+        ax.set_ylabel("velocity")
         ax.set_title("PPO with counts")
         i += 1
         
@@ -165,8 +170,9 @@ def position_heatmap():
         
 
 if __name__ == "__main__":
-    with open('Data/runs.pickle', 'rb') as handle:
+    with open('Data/runs_2.pickle', 'rb') as handle:
         data = pickle.load(handle)
+
 
     summary_list = data['summary']
     config_list = data['config']
@@ -176,6 +182,7 @@ if __name__ == "__main__":
         summary = summary_list[i]
         config = config_list[i]
         name = name_list[i]
+        print(config)
         history = history_list[i]
         break
 
@@ -186,9 +193,9 @@ if __name__ == "__main__":
     updates = np.where(updates[:-1] != updates[1:])[0]
     updates = np.insert(updates, 0, 0)
     
-    # r_intrinsic_plot(r_intrinsic, x_positions, velocities, updates)
-    r_intrinsic_heatmap(r_intrinsic, x_positions, velocities, updates)
-    observation_heatmap(x_positions, velocities, updates)
+    r_intrinsic_plot(r_intrinsic, x_positions, velocities, updates)
+    # r_intrinsic_heatmap(r_intrinsic, x_positions, velocities, updates)
+    # observation_heatmap(x_positions, velocities, updates)
 
 
 
