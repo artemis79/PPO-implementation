@@ -9,8 +9,11 @@ from matplotlib.ticker import LinearLocator
 from mpl_toolkits.axes_grid1 import AxesGrid
 from PIL import Image
 
-from ast import literal_eval
-
+from utils import parse_args, plots_args_parse
+import os
+import h5py
+import torch
+import csv
 
 
 def parse_args_visualize():
@@ -167,33 +170,133 @@ def observation_heatmap(x_position, velocity, updates):
 
 def position_heatmap():
     pass
+
+
+def energy_plot(observations, environment):
+    observations = np.array(observations).reshape(-1, 2)
+    if environment == "MountainCar-v0":
+        x = observations[:, 0]
+        v = observations[:, 1]
+        energy = (x+0.5)**2 + v**2
+        print("Calculated Values:\n", energy)
+
+        # Plot the results
+        plt.figure(figsize=(10, 6))
+        plt.plot(energy)
+        plt.title("Energy of the Cart")
+        plt.xlabel("time step")
+        plt.ylabel("Energy")
+
+        plt.ylim(bottom=0, top=2) 
+
+        plt.grid()
+        plt.show()
         
 
+        
+        
+
+def get_directories_in_path(path):
+    directories = [os.path.join(path, dir_name) for dir_name in os.listdir(path) if os.path.isdir(os.path.join(path, dir_name))]
+    return directories
+
+def get_hyperparameters(path, default_args):
+    param_file = os.path.join(path, 'hyperparameters.txt')
+    file = open(param_file, 'r')
+    params = {}
+    params_str = file.read()
+
+    for string in params_str.split('|'):
+        key = string.split('=')[0]
+        value = string.split('=')[1]
+        args_type = type(default_args[key])
+        print(default_args[key])
+        print(args_type)
+        if value != 'None':
+            params[key] = args_type(value)
+
+    return params
+
+
+def get_observations(path):
+    observation_file = os.path.join(path, 'observations.h5')
+    observations = []
+    with h5py.File(observation_file, 'r') as f:
+        for key in f.keys():  # Iterate through all datasets (tensors)
+            tensor = torch.tensor(f[key][:])  # Convert back to a PyTorch tensor
+            observations.append(tensor.numpy())
+
+    return observations
+
+def get_rewards(path):
+    rewards_file = os.path.join(path, 'rewards.h5')
+    rewards = []
+    with h5py.File(rewards_file, 'r') as f:
+        for key in f.keys():  # Iterate through all datasets (tensors)
+            tensor = torch.tensor(f[key][:])  # Convert back to a PyTorch tensor
+            rewards.append(tensor.numpy())
+
+    return rewards
+
+
+def get_returns(path):
+    returns_file = os.path.join(path, 'returns.csv')
+    returns = []
+    time_step = []
+
+    with open(returns_file, mode='r') as file:
+    # Create a CSV reader object
+        csv_reader = csv.reader(file)
+        
+        # Read each row in the CSV file
+        for row in csv_reader:
+            returns.append(float(row[0]))
+            time_step.append(int(float(row[1]))) 
+
+    return returns, time_step
+
+
 if __name__ == "__main__":
-    with open('Data/runs_2.pickle', 'rb') as handle:
-        data = pickle.load(handle)
+
+    plot_args = plots_args_parse()
+    args = parse_args()
+    default_args = vars(args)
+
+    path = 'all_runs'
+    run_dirs = get_directories_in_path(path)
+
+    for run in run_dirs:
+        params = get_hyperparameters(run, default_args)
+        observations = get_observations(run)
+        rewards = get_rewards(run)
+        returns, time_steps = get_returns(run)
+        energy_plot(observations, params['gym_id'])
 
 
-    summary_list = data['summary']
-    config_list = data['config']
-    name_list  = data['name']
-    history_list = data['history']
-    for i in range(len(data)):
-        summary = summary_list[i]
-        config = config_list[i]
-        name = name_list[i]
-        print(config)
-        history = history_list[i]
-        break
+    # with open('Data/runs_2.pickle', 'rb') as handle:
+    #     data = pickle.load(handle)
 
-    x_positions = np.array(history['x_position'])
-    velocities = np.array(history['velocity'])
-    r_intrinsic = np.array(history['reward'])
-    updates = np.array(history['num_update'])
-    updates = np.where(updates[:-1] != updates[1:])[0]
-    updates = np.insert(updates, 0, 0)
+
+    # summary_list = data['summary']
+    # config_list = data['config']
+    # name_list  = data['name']
+    # history_list = data['history']
+    # for i in range(len(data)):
+    #     summary = summary_list[i]
+    #     config = config_list[i]
+    #     name = name_list[i]
+    #     print(config)
+    #     history = history_list[i]
+    #     break
+
+    # x_positions = np.array(history['x_position'])
+    # velocities = np.array(history['velocity'])
+    # r_intrinsic = np.array(history['reward'])
+    # updates = np.array(history['num_update'])
+    # updates = np.where(updates[:-1] != updates[1:])[0]
+    # updates = np.insert(updates, 0, 0)
     
-    r_intrinsic_plot(r_intrinsic, x_positions, velocities, updates)
+    # r_intrinsic_plot(r_intrinsic, x_positions, velocities, updates)
     # r_intrinsic_heatmap(r_intrinsic, x_positions, velocities, updates)
     # observation_heatmap(x_positions, velocities, updates)
 

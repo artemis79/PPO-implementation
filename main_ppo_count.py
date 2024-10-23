@@ -207,7 +207,7 @@ if __name__ == "__main__":
                             writer.add_scalar("charts/episodic_length", item["episode"]["l"], global_step)
                             writer.add_scalar("charts/episodic_length_per_episode", item["episode"]["l"], episode_number)
                             max_return = max(max_return, item["episode"]["r"])
-                            total_compute_steps += item["episode"]["r"][0]
+                            total_compute_steps += item["episode"]["l"][0]
                             # Log episodic return to 
                             logger.log_episode_return([item["episode"]["r"][0], total_compute_steps, episode_number])
 
