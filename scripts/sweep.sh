@@ -21,7 +21,7 @@ virtualenv pyenv
 source pyenv/bin/activate
 
 pip install 'requests[socks]' --no-index
-pip install -r /home/mrahmani/scratch/requirements.txt
+pip install -r /home/mrahmani/requirements.txt --no-index
 
 
 echo "Cloning repo..."
@@ -29,5 +29,6 @@ git config --global http.proxy 'socks5://127.0.0.1:8888'
 git clone --quiet git@github.com:artemis79/PPO-implementation.git
 
 cd PPO-implementation/
+mkdir all_runs
 
-wandb agent university-alberta/ppo-tmp/qxspt3eu
+wandb agent university-alberta/ppo-tmp/qxspt3eu --count 
