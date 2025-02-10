@@ -160,6 +160,7 @@ cython_debug/
 /wandb
 /figures
 /Data
+/all_runs
 
 # Output files
 *.csv
