@@ -81,7 +81,7 @@ if __name__ == "__main__":
     )
     hyperparameters = "|".join([f"{key}={value}" for key, value in vars(args).items()])
     print(hyperparameters)
-    logger = Logger(hyperparameters)
+    # logger = Logger(hyperparameters)
 
 
 
@@ -209,7 +209,7 @@ if __name__ == "__main__":
                             max_return = max(max_return, item["episode"]["r"])
                             total_compute_steps += item["episode"]["l"][0]
                             # Log episodic return to 
-                            logger.log_episode_return([item["episode"]["r"][0], total_compute_steps, episode_number])
+                            # logger.log_episode_return([item["episode"]["r"][0], total_compute_steps, episode_number])
 
                             if args.track:
                                 run.log({"episodic_return": item["episode"]["r"],
@@ -225,6 +225,8 @@ if __name__ == "__main__":
             run.log({"Return_variance": np.var(returns),
                      "num_update": update
                      })
+
+        print(returns)
             
         # bootstrap value if not done
         with torch.no_grad():
@@ -264,8 +266,8 @@ if __name__ == "__main__":
         b_values = values.reshape(-1)
 
         # Log observations and rewards
-        logger.log_observation(b_obs, update)
-        logger.log_rewards(b_rewards, update)
+        # logger.log_observation(b_obs, update)
+        # logger.log_rewards(b_rewards, update)
 
         # Optimizing the policy and value network
         b_inds = np.arange(args.batch_size)
