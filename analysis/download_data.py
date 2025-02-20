@@ -52,7 +52,6 @@ def run_to_rows(run, metrics_names, param_names, index='step', run_ids=None):
         row.update(param_vals)
         rows.append(row)
 
-
     return rows
     
 
@@ -87,12 +86,12 @@ if __name__ == '__main__':
 run_ids = None
 f = None
 if args.mode == 'w':
-    f = open(output_path, 'w')
-    pd.DataFrame(columns=params + metrics + ['run_id']).to_csv(f, index=False)
+    with open(output_path, 'w') as f:
+        pd.DataFrame(columns=params + metrics + ['run_id']).to_csv(f, index=False)
 elif args.mode == 'a':
-    f = open(output_path, 'a+')
-    df = pd.read_csv(output_path, header=None)
-    run_ids = set(df[9])
+    with open(output_path, 'a+') as f:
+        df = pd.read_csv(output_path, header=None)
+        run_ids = set(df[9])
 
 
 
@@ -108,6 +107,8 @@ for run in tqdm(runs):
             pd.DataFrame(new_rows).to_csv(output_path, mode='a', header=False, index=False)
     except Exception as e:
         print(f"Error fetching data for run {run.id}: {e}")
+
+
 
 print(f'{n_valid_runs}/{len(runs)} runs saved.')
 print(f'Data saved to {output_path}.')
