@@ -21,15 +21,12 @@ virtualenv pyenv
 source pyenv/bin/activate
 
 pip install 'requests[socks]' --no-index
-pip install -r /home/mrahmani/scratch/requirements.txt
+pip install -r /home/mrahmani/requirements.txt --no-index
 
 
 echo "Cloning repo..."
 git config --global http.proxy 'socks5://127.0.0.1:8888'
 git clone --quiet git@github.com:artemis79/PPO-implementation.git
 
-cd PPO-implementation/
 
-python3 main_ppo.py --gym-id "MountainCar-v0" --track --seed $SLURM_ARRAY_TASK_ID --cuda False --total-timesteps 1000000 --wandb-project-name "ppo" --aggregate-function "mean"
-
-python3 main_ppo.py --gym-id "MountainCar-v0" --track --seed 1 --cuda False --total-timesteps 1000000 --wandb-project-name "ppo_plots" --aggregate-function "mean" --count --update-counts-step --num-steps 64
+python3 main_ppo.py --gym-id "MountainCar-v0" --track --seed $SLURM_ARRAY_TASK_ID --cuda False --total-timesteps 500000 --wandb-project-name "energy-ppo" --aggregate-function "mean"
