@@ -266,6 +266,12 @@ if __name__ == "__main__":
         b_values = values.reshape(-1)
 
         # Log observations and rewards
+        if args.track:
+            run.log({
+                "x_position": observation[0],
+                "velocity": observation[1],
+                "step": global_step,
+            })
         # logger.log_observation(b_obs, update)
         # logger.log_rewards(b_rewards, update)
 
