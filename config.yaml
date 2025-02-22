@@ -12,7 +12,7 @@ parameters:
     value: "MountainCar-v0"
 
   wandb-project-name:
-    value: "dump"
+    value: "mountaincar-sweep"
 
   track:
     value: True
