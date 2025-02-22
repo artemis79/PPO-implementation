@@ -37,8 +37,8 @@ if __name__ == '__main__':
             new_id = create_sweep(config)
             # config_ids.extend(new_ids)
         
-    print('Created sweeps with ids:\n', ', '.join(config_ids))
-    print('From configs:\n', ', '.join(config_names))
+        print('Created sweeps with ids:\n', ', '.join(config_ids))
+        print('From configs:\n', ', '.join(config_names))
 
 
     if args.sweep_id is not None:
