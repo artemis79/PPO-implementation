@@ -1,5 +1,8 @@
 program: main_ppo_count.py
 name: mountaincar-ppo-count-sweep
+
+project: dump
+
 method: grid
 metric:
   goal: maximize
@@ -9,31 +12,44 @@ parameters:
     value: "MountainCar-v0"
 
   wandb-project-name:
-    value: "ppo-tmp"
+    value: "dump"
 
   track:
     value: True
 
   num-steps:
-    value: 200
+    values: [64, 128, 200]
 
   total-timesteps:
     value: 500000
 
   count:
-    values: [True]
+    value: True
 
   update-counts-step:
-    values: [True]
+    values: [False, True]
 
   aggregate-function: 
-    value : 'mean'
+    values: ['mean', 'min']
 
   anneal-lr:
-    value: False
+    value: True
 
   seed: 
-    values: [1, 2, 3, 4]
+    values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10 , 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
+
+  learning-rate:
+    values: [2.5e-3, 2.5e-4, 2.5e-5]
+
+  beta:
+    values: [0.1 ,1, 10, 100]
+
+  count-start:
+    value: 1
+
+  track:
+    value: True
+
 
   
 
