@@ -1,7 +1,7 @@
 program: main_ppo_count.py
 name: mountaincar-ppo-count-sweep
 
-project: dump
+project: mountaincar-sweep
 
 method: grid
 metric:
