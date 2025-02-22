@@ -98,6 +98,7 @@ if __name__ == "__main__":
             with torch.no_grad():
                 action, logprob, _, value = agent.get_action_and_value(next_obs)
                 values[step] = value.flatten()
+                
             actions[step] = action
             logprobs[step] = logprob
 
