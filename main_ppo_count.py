@@ -267,12 +267,12 @@ if __name__ == "__main__":
 
         # Log observations and rewards
         # print('x_position', b_obs[0][0], 'velocity', b_obs[0][1])
-        if args.track:
-            run.log({
-                "x_position": b_obs[0][0],
-                "velocity": b_obs[0][1],
-                "global_step": global_step,
-            })
+        # if args.track:
+        #     run.log({
+        #         "x_position": b_obs[0][0],
+        #         "velocity": b_obs[0][1],
+        #         "global_step": global_step,
+        #     })
         # logger.log_observation(b_obs, update)
         # logger.log_rewards(b_rewards, update)
 
